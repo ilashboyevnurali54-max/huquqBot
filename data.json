@@ -1,0 +1,18 @@
+{
+  "questions": {
+    "mcq": [],
+    "short": []
+  },
+  "code": null,
+  "published": false,
+  "active": false,
+  "students": {
+    "8439000001": {
+      "name": null,
+      "state": "registering",
+      "idx": 0,
+      "answers": [],
+      "done": false
+    }
+  }
+}

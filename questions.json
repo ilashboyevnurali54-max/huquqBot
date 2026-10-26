@@ -1,0 +1,17 @@
+{
+  "mcq": [
+    {
+      "q": "1-savol matni (namuna). Konstitutsiya qaysi yilda qabul qilingan?",
+      "options": { "A": "1991", "B": "1992", "C": "1993", "D": "1995" },
+      "correct": "B"
+    },
+    {
+      "q": "2-savol matni (namuna)",
+      "options": { "A": "variant A", "B": "variant B", "C": "variant C", "D": "variant D" },
+      "correct": "A"
+    }
+  ],
+  "short": [
+    { "q": "1-qisqa yozma savol (namuna): Huquq normasi nima?" }
+  ]
+}

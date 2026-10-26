@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Huquq testi — savollar</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --fg: var(--tg-theme-text-color, #16181a);
+    --hint: var(--tg-theme-hint-color, #707579);
+    --sec: var(--tg-theme-secondary-bg-color, #f1f3f5);
+    --btn: var(--tg-theme-button-color, #2481cc);
+    --btnfg: var(--tg-theme-button-text-color, #ffffff);
+    --ok: #2e9e5b;
+    --danger: #d64545;
+    --line: color-mix(in srgb, var(--hint) 30%, transparent);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; padding-bottom: 96px; }
+  header { padding: 16px 16px 8px; }
+  h1 { font-size: 20px; margin: 0 0 10px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { background: var(--sec); border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+  .chip.full { background: color-mix(in srgb, var(--ok) 18%, var(--bg)); color: var(--ok); font-weight: 600; }
+  .tabs { display: flex; gap: 6px; padding: 8px 16px; }
+  .tabs button { flex: 1; padding: 10px; border: 0; border-radius: 10px; background: var(--sec); color: var(--fg); font: inherit; font-weight: 600; }
+  .tabs button.on { background: var(--btn); color: var(--btnfg); }
+  .card { margin: 8px 16px; padding: 14px; background: var(--sec); border-radius: 14px; }
+  label.t { display: block; font-size: 13px; color: var(--hint); margin-bottom: 4px; }
+  textarea, input[type=text] { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); font: inherit; }
+  textarea { resize: vertical; min-height: 76px; }
+  .opt { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .opt .r { position: relative; flex: none; width: 40px; height: 40px; }
+  .opt .r input { position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; }
+  .opt .r span { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--line); font-weight: 700; background: var(--bg); }
+  .opt .r input:checked + span { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .hint { font-size: 13px; color: var(--hint); margin: 8px 0 0; }
+  .row { display: flex; gap: 8px; margin-top: 12px; }
+  .btn { flex: 1; padding: 12px; border: 0; border-radius: 12px; background: var(--btn); color: var(--btnfg); font: inherit; font-weight: 600; }
+  .btn.ghost { background: var(--bg); color: var(--fg); border: 1px solid var(--line); }
+  .btn:disabled { opacity: .45; }
+  .item { margin: 8px 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; }
+  .item .top { display: flex; gap: 10px; align-items: flex-start; }
+  .item .n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--sec); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .item .q { flex: 1; word-break: break-word; }
+  .item .opts { margin: 8px 0 0 36px; font-size: 14px; color: var(--hint); }
+  .item .opts div.c { color: var(--ok); font-weight: 600; }
+  .item .acts { display: flex; gap: 6px; }
+  .icon { border: 0; background: var(--sec); border-radius: 8px; width: 34px; height: 34px; font-size: 15px; }
+  .empty { text-align: center; color: var(--hint); padding: 24px 16px; }
+  .banner { margin: 8px 16px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--ok) 16%, var(--bg)); }
+  footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line); }
+  footer .btn { width: 100%; padding: 14px; font-size: 16px; background: var(--ok); color: #fff; }
+  .done { text-align: center; padding: 48px 24px; }
+  .code { font-size: 44px; font-weight: 800; letter-spacing: 6px; margin: 16px 0; font-variant-numeric: tabular-nums; }
+  .err { margin: 24px 16px; padding: 16px; border-radius: 12px; background: color-mix(in srgb, var(--danger) 14%, var(--bg)); color: var(--danger); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<footer id="foot" hidden><button id="publish" class="btn"></button></footer>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const LET = ['A', 'B', 'C', 'D'];
+let S = null, tab = 'mcq', editing = null;
+const $ = s => document.querySelector(s);
+
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'value') e.value = v;
+    else if (k === 'checked') e.checked = true;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null) e.append(c);
+  return e;
+}
+
+async function api(method, url, body) {
+  const r = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-Init-Data': (tg && tg.initData) || '' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Xatolik yuz berdi');
+  return d;
+}
+const warn = m => (tg && tg.showAlert ? tg.showAlert(m) : alert(m));
+const ask = (m, cb) => (tg && tg.showConfirm ? tg.showConfirm(m, ok => ok && cb()) : confirm(m) && cb());
+const haptic = t => tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t);
+
+async function load() {
+  S = await api('GET', '/api/state');
+  render();
+}
+
+function render() {
+  const root = $('#root');
+  root.textContent = '';
+  const nM = S.mcq.length, nS = S.short.length;
+
+  root.append(el('header', {},
+    el('h1', {}, '📚 Huquq testi'),
+    el('div', { class: 'chips' },
+      el('span', { class: 'chip' + (nM === S.limits.mcq ? ' full' : '') }, `Test: ${nM}/${S.limits.mcq}`),
+      el('span', { class: 'chip' + (nS === S.limits.short ? ' full' : '') }, `Yozma: ${nS}/${S.limits.short}`))));
+
+  if (S.published) {
+    root.append(el('div', { class: 'banner' }, `🔒 Test e'lon qilingan. Test kodi: ${S.code}. Savollarni o'zgartirib bo'lmaydi.`));
+  }
+
+  root.append(el('div', { class: 'tabs' },
+    el('button', { class: tab === 'mcq' ? 'on' : '', onclick: () => { tab = 'mcq'; editing = null; render(); } }, 'Test (A/B/C/D)'),
+    el('button', { class: tab === 'short' ? 'on' : '', onclick: () => { tab = 'short'; editing = null; render(); } }, 'Yozma javob')));
+
+  const list = S[tab];
+  if (!S.published) root.append(form(list));
+
+  if (!list.length) root.append(el('div', { class: 'empty' }, 'Hali savol qo\'shilmagan.'));
+  list.forEach((it, i) => root.append(item(it, i)));
+
+  // pastki tugma
+  const foot = $('#foot'), pb = $('#publish');
+  foot.hidden = S.published;
+  const left = (S.limits.mcq - nM) + (S.limits.short - nS);
+  pb.disabled = left > 0;
+  pb.textContent = left > 0 ? `Yana ${left} ta savol kerak` : '✅ Testni tayyor qilish va kod olish';
+}
+
+function form(list) {
+  const cur = editing && editing.type === tab ? list[editing.i] : null;
+  const full = !cur && list.length >= S.limits[tab];
+  if (full) return el('div', { class: 'banner' }, `✅ ${tab === 'mcq' ? 'Test' : 'Yozma'} savollari to'ldi (${list.length}/${S.limits[tab]}).`);
+
+  const box = el('div', { class: 'card' },
+    el('label', { class: 't', for: 'q' }, (cur ? `${editing.i + 1}-savolni tahrirlash` : `${list.length + 1}-savol`)),
+    el('textarea', { id: 'q', placeholder: 'Savol matnini yozing...', value: cur ? cur.q : '' }));
+
+  if (tab === 'mcq') {
+    LET.forEach(k => box.append(el('div', { class: 'opt' },
+      el('label', { class: 'r' },
+        el('input', { type: 'radio', name: 'correct', value: k, checked: cur && cur.correct === k }),
+        el('span', {}, k)),
+      el('input', { type: 'text', id: 'o' + k, placeholder: `${k} variant`, value: cur ? cur.options[k] : '' }))));
+    box.append(el('p', { class: 'hint' }, 'To\'g\'ri javob harfini bosib belgilang (yashil bo\'ladi).'));
+  }
+
+  box.append(el('div', { class: 'row' },
+    editing ? el('button', { class: 'btn ghost', onclick: () => { editing = null; render(); } }, 'Bekor') : null,
+    el('button', { class: 'btn', onclick: submit }, cur ? 'Saqlash' : '➕ Qo\'shish')));
+  return box;
+}
+
+async function submit() {
+  const body = { q: $('#q').value };
+  if (tab === 'mcq') {
+    body.options = Object.fromEntries(LET.map(k => [k, $('#o' + k).value]));
+    const c = document.querySelector('input[name=correct]:checked');
+    if (!c) return warn('To\'g\'ri javobni belgilang (A, B, C yoki D).');
+    body.correct = c.value;
+  }
+  try {
+    S = editing
+      ? await api('PUT', `/api/q/${tab}/${editing.i}`, body)
+      : await api('POST', `/api/q/${tab}`, body);
+    editing = null;
+    haptic('success');
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) { haptic('error'); warn(e.message); }
+}
+
+function item(it, i) {
+  const top = el('div', { class: 'top' },
+    el('div', { class: 'n' }, String(i + 1)),
+    el('div', { class: 'q' }, it.q),
+    S.published ? null : el('div', { class: 'acts' },
+      el('button', { class: 'icon', title: 'Tahrirlash', onclick: () => { editing = { type: tab, i }; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, '✏️'),
+      el('button', { class: 'icon', title: 'O\'chirish', onclick: () => ask(`${i + 1}-savolni o'chirasizmi?`, async () => {
+        try { S = await api('DELETE', `/api/q/${tab}/${i}`); editing = null; render(); } catch (e) { warn(e.message); }
+      }) }, '🗑')));
+  const box = el('div', { class: 'item' }, top);
+  if (it.options) {
+    box.append(el('div', { class: 'opts' }, LET.map(k =>
+      el('div', { class: it.correct === k ? 'c' : '' }, `${k}) ${it.options[k]}${it.correct === k ? '  ✓' : ''}`))));
+  }
+  return box;
+}
+
+$('#publish').addEventListener('click', () => {
+  ask('Test tayyor deb e\'lon qilinadi, kod hosil bo\'ladi va ro\'yxatdagi o\'quvchilarga yuboriladi. Keyin savollarni o\'zgartirib bo\'lmaydi. Davom etamizmi?', async () => {
+    $('#publish').disabled = true;
+    try {
+      const { code } = await api('POST', '/api/publish');
+      haptic('success');
+      $('#foot').hidden = true;
+      const root = $('#root');
+      root.textContent = '';
+      root.append(el('div', { class: 'done' },
+        el('div', { style: 'font-size:56px' }, '🎉'),
+        el('h1', {}, 'Test tayyor!'),
+        el('div', {}, 'Test kodi:'),
+        el('div', { class: 'code' }, code),
+        el('p', { class: 'hint' }, 'Kod o\'quvchilarga yuborilmoqda. Natijani botdan ko\'rasiz.'),
+        el('button', { class: 'btn', style: 'margin-top:16px', onclick: () => (tg ? tg.close() : location.reload()) }, 'Yopish')));
+    } catch (e) { haptic('error'); warn(e.message); $('#publish').disabled = false; }
+  });
+});
+
+load().catch(e => {
+  $('#root').append(el('div', { class: 'err' }, e.message + (tg && tg.initData ? '' : ' (Mini ilovani Telegramda bot orqali oching.)')));
+});
+</script>
+</body>
+</html>
