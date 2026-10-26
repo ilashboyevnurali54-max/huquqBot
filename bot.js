@@ -17,7 +17,7 @@ if (!BOT_TOKEN) { console.error('BOT_TOKEN .env faylida yo\'q'); process.exit(1)
 const bot = new Telegraf(BOT_TOKEN);
 
 // ================= Ma'lumotlar bazasi (data.json) =================
-const DB_FILE = './data.json';
+const DB_FILE = path.join(process.env.DATA_DIR || '.', 'data.json'); // Render Disk ishlatsangiz DATA_DIR=/data qiling
 let db = { questions: { mcq: [], short: [] }, code: null, published: false, active: false, students: {} };
 if (fs.existsSync(DB_FILE)) db = { ...db, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
 const save = () => fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
@@ -28,6 +28,13 @@ const mcqScore = s => db.questions.mcq.reduce((n, q, i) => n + (s.answers[i] ===
 const app = express();
 app.use(express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// index.html ni public/ ichidan yoki loyiha ildizidan topadi
+const INDEX_CANDIDATES = [path.join(__dirname, 'public', 'index.html'), path.join(__dirname, 'index.html')];
+const INDEX = INDEX_CANDIDATES.find(f => fs.existsSync(f));
+console.log('index.html:', INDEX ? 'topildi ✅ ' + INDEX : 'TOPILMADI ❌ qidirilgan: ' + INDEX_CANDIDATES.join(', '));
+app.get('/', (req, res) => INDEX
+  ? res.sendFile(INDEX)
+  : res.status(500).send('index.html topilmadi. GitHub reposiga index.html (yoki public/index.html) yuklang.'));
 
 // Telegram initData imzosini tekshirish
 function auth(req, res, next) {
